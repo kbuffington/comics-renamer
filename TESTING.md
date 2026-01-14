@@ -124,20 +124,20 @@ echo "" > "Amazing Spider-Man 500.1 (2023) (Digital).cbr"
 ### Run Script in Dry-Run Mode
 
 ```bash
-node ../comics-renamer.js "." "Test Series" 3 --dry-run
+comics-renamer "." "Test Series" 3 --dry-run
 ```
 
 ### Test Specific Features
 
 ```bash
 # Test year override
-node ../comics-renamer.js "." "Test" 3 --year=2023 --dry-run
+comics-renamer "." "Test" 3 --year=2023 --dry-run
 
 # Test renumbering
-node ../comics-renamer.js "." "Test" 3 --start-number=1 --dry-run
+comics-renamer "." "Test" 3 --start-number=1 --dry-run
 
 # Test with 4-digit padding
-node ../comics-renamer.js "." "Test" 4 --dry-run
+comics-renamer "." "Test" 4 --dry-run
 ```
 
 ## Bug Regression Tests

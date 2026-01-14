@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "A tool to standardize comic book file naming",
   "main": "comics-renamer.js",
+  "bin": {
+    "comics-renamer": "./comics-renamer.js"
+  },
   "scripts": {
     "test": "node --test comics-renamer-lib.test.js",
     "test:unit": "node --test comics-renamer-lib.test.js",

@@ -25,8 +25,12 @@ A Node.js tool to standardize comic book file naming conventions.
 Requires Node.js >= 18.0.0
 
 ```bash
-# No installation needed - just run the script directly
-node comics-renamer.js [options]
+# Clone or download, then install globally
+cd comics-renamer
+npm link
+
+# Now you can run from anywhere
+comics-renamer "." "Series Name" --dry-run
 ```
 
 ## Usage
@@ -34,26 +38,26 @@ node comics-renamer.js [options]
 ### Basic Usage
 
 ```bash
-node comics-renamer.js "path/to/folder" "Series Name" [numDigits] [options]
+comics-renamer "path/to/folder" "Series Name" [numDigits] [options]
 ```
 
 ### Examples
 
 ```bash
 # Basic rename with 3-digit padding
-node comics-renamer.js "." "Amazing Spider-Man" 3 --dry-run
+comics-renamer "." "Amazing Spider-Man" 3 --dry-run
 
 # Override year for all files
-node comics-renamer.js "." "Batman" 3 --year=2020 --dry-run
+comics-renamer "." "Batman" 3 --year=2020 --dry-run
 
 # Renumber files sequentially starting from 001
-node comics-renamer.js "." "X-Men" 3 --start-number=1 --dry-run
+comics-renamer "." "X-Men" 3 --start-number=1 --dry-run
 
 # Use lowercase for scan types
-node comics-renamer.js "." "Superman" 3 --capitalize=false --dry-run
+comics-renamer "." "Superman" 3 --capitalize=false --dry-run
 
 # Auto-confirm without prompt
-node comics-renamer.js "." "Wonder Woman" 3 --y
+comics-renamer "." "Wonder Woman" 3 --y
 ```
 
 ### Command-Line Options

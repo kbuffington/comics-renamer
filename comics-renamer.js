@@ -9,7 +9,7 @@ if (args.length < 2 || args.includes("-h") || args.includes("--help")) {
   console.log(`
 Comic Book Renamer
 
-Usage: node comics-renamer.js "Folder Path" "Series Name" [numDigits] [--dry-run] [--start-number=N] [--year=YYYY] [--capitalize]
+Usage: comics-renamer "Folder Path" "Series Name" [numDigits] [--dry-run] [--start-number=N] [--year=YYYY] [--capitalize]
 
 Arguments:
   Folder Path       - Path to folder containing comic files (required)
@@ -22,12 +22,12 @@ Arguments:
   --y               - Auto-confirm renaming without prompt
 
 Examples:
-  node comics-renamer.js "." "Amazing Spider-Man"
-  node comics-renamer.js "C:\\Comics" "Amazing Spider-Man" 4
-  node comics-renamer.js "." "Amazing Spider-Man" 3 --dry-run
-  node comics-renamer.js "." "Amazing Spider-Man" 3 --start-number=001 --dry-run
-  node comics-renamer.js "." "Amazing Spider-Man" 3 --year=2023 --dry-run
-  node comics-renamer.js "." "Amazing Spider-Man" 3 --capitalize=false
+  comics-renamer "." "Amazing Spider-Man"
+  comics-renamer "C:\\Comics" "Amazing Spider-Man" 4
+  comics-renamer "." "Amazing Spider-Man" 3 --dry-run
+  comics-renamer "." "Amazing Spider-Man" 3 --start-number=001 --dry-run
+  comics-renamer "." "Amazing Spider-Man" 3 --year=2023 --dry-run
+  comics-renamer "." "Amazing Spider-Man" 3 --capitalize=false
 
 Expected input format:
   seriesName ###(YYYY)(scan-type)(Release Group).ext
