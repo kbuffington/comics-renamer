@@ -84,22 +84,18 @@ function padIssueNumber(issueNum, numDigits) {
     return issueNum;
   }
 
-  // Extract base number and suffix (for formats like 500.1 or 501AU)
+  // Don't pad decimal issue numbers (0.5, 1.5, 500.1 stay as-is)
+  if (/^\d+\./.test(issueNum)) {
+    return issueNum;
+  }
+
+  // Extract base number and letter suffix (e.g. "501AU" → base "501", suffix "AU")
   let baseNum = issueNum;
   let suffix = "";
-
-  // Check for decimal
-  const decimalMatch = issueNum.match(/^(\d+)\.(.+)$/);
-  if (decimalMatch) {
-    baseNum = decimalMatch[1];
-    suffix = "." + decimalMatch[2];
-  } else {
-    // Check for letters at the end
-    const letterMatch = issueNum.match(/^(\d+)([A-Za-z]+)$/);
-    if (letterMatch) {
-      baseNum = letterMatch[1];
-      suffix = letterMatch[2];
-    }
+  const letterMatch = issueNum.match(/^(\d+)([A-Za-z]+)$/);
+  if (letterMatch) {
+    baseNum = letterMatch[1];
+    suffix = letterMatch[2];
   }
 
   // Pad the base number

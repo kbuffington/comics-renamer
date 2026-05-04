@@ -55,6 +55,10 @@ let yearOverride = null;
 let capitalize = true;
 let fixExtensions = false;
 
+const GREEN = "\x1b[1;32m";
+const EXTENSION_COLOR = "\x1b[1;31m";
+const RESET = "\x1b[0m";
+
 // Check for --start-number flag
 const startNumberArg = args.find((arg) => arg.startsWith("--start-number="));
 if (startNumberArg) {
@@ -182,7 +186,9 @@ function extractIssueNumber(filename) {
       // Check if next token is pure digits (potential decimal part)
       // BUT: Don't combine if next token looks like a year (4 digits starting with 19/20)
       if (/^[0-9]+$/.test(nextToken)) {
-        const isYear = nextToken.length === 4 && (nextToken.startsWith("19") || nextToken.startsWith("20"));
+        const isYear =
+          nextToken.length === 4 &&
+          (nextToken.startsWith("19") || nextToken.startsWith("20"));
         if (!isYear) {
           const combined = token + "." + nextToken;
           if (isIssueNumber(combined)) {
@@ -220,22 +226,18 @@ function padIssueNumber(issueNum, numDigits) {
     return issueNum;
   }
 
-  // Extract base number and suffix (for formats like 500.1 or 501AU)
+  // Don't pad decimal issue numbers (0.5, 1.5, 500.1 stay as-is)
+  if (/^\d+\./.test(issueNum)) {
+    return issueNum;
+  }
+
+  // Extract base number and letter suffix (e.g. "501AU" → base "501", suffix "AU")
   let baseNum = issueNum;
   let suffix = "";
-
-  // Check for decimal
-  const decimalMatch = issueNum.match(/^(\d+)\.(.+)$/);
-  if (decimalMatch) {
-    baseNum = decimalMatch[1];
-    suffix = "." + decimalMatch[2];
-  } else {
-    // Check for letters at the end
-    const letterMatch = issueNum.match(/^(\d+)([A-Za-z]+)$/);
-    if (letterMatch) {
-      baseNum = letterMatch[1];
-      suffix = letterMatch[2];
-    }
+  const letterMatch = issueNum.match(/^(\d+)([A-Za-z]+)$/);
+  if (letterMatch) {
+    baseNum = letterMatch[1];
+    suffix = letterMatch[2];
   }
 
   // Pad the base number
@@ -287,6 +289,8 @@ function extractParenContent(filename) {
     // Check if it's a scan type (case insensitive)
     else if (content.toLowerCase() === "digital") {
       result.scanType = capitalize ? "Digital" : "digital";
+    } else if (content.toLowerCase() === "digital+") {
+      result.scanType = capitalize ? "Digital+" : "digital+";
     } else if (content.toLowerCase() === "digital-hd") {
       result.scanType = capitalize ? "Digital-HD" : "digital-HD";
     } else if (content.toLowerCase() === "digital-sd") {
@@ -350,15 +354,16 @@ function processFile(filename) {
 }
 
 function highlightDifferences(oldStr, newStr, extensionStart = -1) {
-  const GREEN = "\x1b[32m";
-  const YELLOW = "\x1b[93m";
-  const RESET = "\x1b[0m";
-
   let result = "";
 
   for (let i = 0; i < newStr.length; i++) {
-    if (i >= oldStr.length || oldStr[i] !== newStr[i]) {
-      const color = extensionStart >= 0 && i >= extensionStart ? YELLOW : GREEN;
+    if (
+      i >= oldStr.length ||
+      oldStr[i] !== newStr[i] ||
+      (extensionStart >= 0 && i >= extensionStart) // extensionStart means the extension was updated so highlight the whole thing not just any differences in the extension itself
+    ) {
+      const color =
+        extensionStart >= 0 && i >= extensionStart ? EXTENSION_COLOR : GREEN;
       result += color + newStr[i] + RESET;
     } else {
       result += newStr[i];
@@ -450,11 +455,16 @@ for (const file of files) {
       } else {
         const correctExt = detectedFormat === "zip" ? ".cbz" : ".cbr";
         const base = newName || file;
-        const baseWithoutExt = base.slice(0, base.length - path.extname(base).length);
+        const baseWithoutExt = base.slice(
+          0,
+          base.length - path.extname(base).length
+        );
         const candidate = baseWithoutExt + correctExt;
         if (correctExt !== path.extname(base).toLowerCase()) {
           if (fs.existsSync(path.join(resolvedFolder, candidate))) {
-            console.log(`Warning: Cannot fix extension for ${file} — ${candidate} already exists`);
+            console.log(
+              `Warning: Cannot fix extension for ${file} — ${candidate} already exists`
+            );
           } else {
             newName = candidate;
             extFixed = true;
@@ -472,28 +482,29 @@ for (const file of files) {
 }
 
 // Display all changes
-const YELLOW = "\x1b[93m";
-const RESET = "\x1b[0m";
 
 for (let i = 0; i < changes.length; i++) {
   const { oldName, newName, extFixed } = changes[i];
   const oldExt = path.extname(oldName);
   const newExt = path.extname(newName);
-  const nameChanged = oldName.slice(0, oldName.length - oldExt.length) !==
-                      newName.slice(0, newName.length - newExt.length);
+  const nameChanged =
+    oldName.slice(0, oldName.length - oldExt.length) !==
+    newName.slice(0, newName.length - newExt.length);
 
   if (extFixed && !nameChanged) {
-    // Extension-only fix: print directly with yellow extension
+    // Extension-only fix: print directly with extension color
     const basePart = newName.slice(0, newName.length - newExt.length);
     console.log(`[${i + 1}] Ext fix:`);
     console.log(`  Old: ${oldName}`);
-    console.log(`  New: ${basePart}${YELLOW}${newExt}${RESET}`);
+    console.log(`  New: ${basePart}${EXTENSION_COLOR}${newExt}${RESET}`);
   } else if (extFixed && nameChanged) {
-    // Combined: green name changes, yellow extension
+    // Combined: green name changes, extension color change
     const extensionStart = newName.length - newExt.length;
     console.log(`[${i + 1}] Rename + ext fix:`);
     console.log(`  Old: ${oldName}`);
-    console.log(`  New: ${highlightDifferences(oldName, newName, extensionStart)}`);
+    console.log(
+      `  New: ${highlightDifferences(oldName, newName, extensionStart)}`
+    );
   } else {
     // Normal rename only
     console.log(`[${i + 1}] Rename:`);

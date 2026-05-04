@@ -149,9 +149,10 @@ describe("padIssueNumber", () => {
     assert.strictEqual(padIssueNumber("-1", 3), "-1");
   });
 
-  it("should preserve decimals and pad base number", () => {
+  it("should not pad decimal issue numbers", () => {
     assert.strictEqual(padIssueNumber("500.1", 3), "500.1");
-    assert.strictEqual(padIssueNumber("1.5", 3), "001.5");
+    assert.strictEqual(padIssueNumber("1.5", 3), "1.5");
+    assert.strictEqual(padIssueNumber("0.5", 3), "0.5");
   });
 
   it("should preserve letters and pad base number", () => {
