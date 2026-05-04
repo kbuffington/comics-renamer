@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { detectFileFormat } = require("./comics-renamer-lib");
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -19,6 +20,7 @@ Arguments:
   --start-number=N  - Renumber files starting from N (e.g., --start-number=001)
   --year=YYYY       - Override year in all files (e.g., --year=2000)
   --capitalize      - Capitalize scan types like "Digital" (default: true, use --capitalize=false for lowercase)
+  --fix-extensions  - Check actual file format via magic bytes and fix wrong .cbr/.cbz extensions
   --y               - Auto-confirm renaming without prompt
 
 Examples:
@@ -28,6 +30,7 @@ Examples:
   comics-renamer "." "Amazing Spider-Man" 3 --start-number=001 --dry-run
   comics-renamer "." "Amazing Spider-Man" 3 --year=2023 --dry-run
   comics-renamer "." "Amazing Spider-Man" 3 --capitalize=false
+  comics-renamer "." "Amazing Spider-Man" 3 --fix-extensions --dry-run
 
 Expected input format:
   seriesName ###(YYYY)(scan-type)(Release Group).ext
@@ -50,6 +53,7 @@ let autoConfirm = false;
 let startNumber = null;
 let yearOverride = null;
 let capitalize = true;
+let fixExtensions = false;
 
 // Check for --start-number flag
 const startNumberArg = args.find((arg) => arg.startsWith("--start-number="));
@@ -87,6 +91,11 @@ if (args.includes("--dry-run")) {
   numDigits = parseInt(args[2]) || 3;
 }
 
+// Check for --fix-extensions flag
+if (args.includes("--fix-extensions")) {
+  fixExtensions = true;
+}
+
 // Verify folder exists
 if (!fs.existsSync(folder)) {
   console.error(`Error: Folder not found: ${folder}`);
@@ -107,6 +116,9 @@ if (startNumber !== null) {
 }
 if (yearOverride !== null) {
   console.log(`Year Override: ${yearOverride}`);
+}
+if (fixExtensions) {
+  console.log(`Fix Extensions: enabled`);
 }
 console.log(
   `Mode: ${
