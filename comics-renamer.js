@@ -438,9 +438,15 @@ for (const file of files) {
   if (fixExtensions) {
     const currentExt = path.extname(file).toLowerCase();
     if (currentExt === ".cbr" || currentExt === ".cbz") {
-      const detectedFormat = detectFileFormat(path.join(resolvedFolder, file));
+      let detectedFormat;
+      try {
+        detectedFormat = detectFileFormat(path.join(resolvedFolder, file));
+      } catch (err) {
+        console.log(`Warning: Could not read ${file} — ${err.message}`);
+        detectedFormat = null;
+      }
       if (detectedFormat === null) {
-        console.log(`Warning: Could not detect format for ${file} — extension not changed`);
+        // format unrecognized or unreadable — leave extension as-is
       } else {
         const correctExt = detectedFormat === "zip" ? ".cbz" : ".cbr";
         const base = newName || file;
