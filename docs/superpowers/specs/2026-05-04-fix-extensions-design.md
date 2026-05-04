@@ -40,7 +40,7 @@ When `--fix-extensions` is passed, the main file loop gains one extra step per `
 
 1. Call `detectFileFormat(filePath)` to get the true format.
 2. Determine the correct extension from the format.
-3. If format is `null`: print a warning and skip the file.
+3. If format is `null`: print a warning and proceed with the rename using the file's original extension unchanged (the rename still happens; only the extension fix is skipped).
 4. Use the correct extension when constructing `newName` (replacing whatever extension the source file has).
 
 Three outcome cases:
@@ -70,6 +70,8 @@ Extension-only fixes include an `[ext fix]` label in the output to distinguish t
   Old: Batman 001.cbr
   New: Batman 001.cbz   ← extension in bright yellow
 ```
+
+For the **extension-only** case, `highlightDifferences` is not used. Instead, the new filename is printed directly with only the extension portion wrapped in bright yellow — since there are no name characters that changed green. For the **combined** case (name + extension fix), `highlightDifferences` is called and receives the `extensionStart` index (= `newName.length - ext.length`) so it can switch color at that boundary.
 
 ### 4. New Flag Parsing
 
