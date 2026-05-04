@@ -20,7 +20,7 @@ Arguments:
   --start-number=N  - Renumber files starting from N (e.g., --start-number=001)
   --year=YYYY       - Override year in all files (e.g., --year=2000)
   --capitalize      - Capitalize scan types like "Digital" (default: true, use --capitalize=false for lowercase)
-  --fix-extensions  - Check actual file format via magic bytes and fix wrong .cbr/.cbz extensions
+  --fix-extensions  - Detect and fix wrong .cbr/.cbz extensions via magic bytes (does not apply to .cb7)
   --y               - Auto-confirm renaming without prompt
 
 Examples:
@@ -447,7 +447,7 @@ for (const file of files) {
         const baseWithoutExt = base.slice(0, base.length - path.extname(base).length);
         const candidate = baseWithoutExt + correctExt;
         if (correctExt !== path.extname(base).toLowerCase()) {
-          if (candidate !== file && fs.existsSync(path.join(resolvedFolder, candidate))) {
+          if (fs.existsSync(path.join(resolvedFolder, candidate))) {
             console.log(`Warning: Cannot fix extension for ${file} — ${candidate} already exists`);
           } else {
             newName = candidate;
