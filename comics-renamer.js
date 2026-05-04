@@ -151,11 +151,12 @@ function isIssueNumber(token) {
 }
 
 function extractIssueNumber(filename) {
-  // Remove " of ##" pattern
-  let working = filename.replace(/ of [0-9]+/g, "");
+  // Remove " of ##" pattern (space or underscore separated)
+  let working = filename.replace(/[\s_]of[\s_][0-9]+/g, "");
 
-  // Split by spaces, periods, and parentheses to get tokens
-  const tokens = working.split(/[\s().]+/);
+  // Split by spaces, periods, underscores, parentheses, and # to get tokens
+  // # is included so "#1" is split into ["", "1"] and the number is found
+  const tokens = working.split(/[\s()._#]+/);
 
   // Find first token that looks like an issue number
   // Check for decimal issues FIRST (e.g., "500.1" split into ["500", "1"])
@@ -197,7 +198,8 @@ function extractIssueNumber(filename) {
 
 function detectAnnual(filename) {
   // Check if filename contains "Annual" (case insensitive)
-  return /\bannual\b/i.test(filename);
+  // Replace underscores with spaces so \b word boundaries work correctly
+  return /\bannual\b/i.test(filename.replace(/_/g, " "));
 }
 
 function padIssueNumber(issueNum, numDigits) {
@@ -335,17 +337,17 @@ function processFile(filename) {
   return newName;
 }
 
-function highlightDifferences(oldStr, newStr) {
-  // ANSI color codes
+function highlightDifferences(oldStr, newStr, extensionStart = -1) {
   const GREEN = "\x1b[32m";
+  const YELLOW = "\x1b[93m";
   const RESET = "\x1b[0m";
 
   let result = "";
-  const maxLen = Math.max(oldStr.length, newStr.length);
 
   for (let i = 0; i < newStr.length; i++) {
     if (i >= oldStr.length || oldStr[i] !== newStr[i]) {
-      result += GREEN + newStr[i] + RESET;
+      const color = extensionStart >= 0 && i >= extensionStart ? YELLOW : GREEN;
+      result += color + newStr[i] + RESET;
     } else {
       result += newStr[i];
     }
