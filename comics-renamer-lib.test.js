@@ -2,12 +2,16 @@
 
 const { describe, it } = require("node:test");
 const assert = require("node:assert");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
 const {
   isIssueNumber,
   extractIssueNumber,
   detectAnnual,
   padIssueNumber,
   extractParenContent,
+  detectFileFormat,
 } = require("./comics-renamer-lib");
 
 describe("isIssueNumber", () => {
@@ -85,6 +89,17 @@ describe("extractIssueNumber", () => {
     assert.strictEqual(extractIssueNumber("X-Men.500.1.(2022)"), "500.1");
   });
 
+  it("should extract from underscore-separated filenames", () => {
+    assert.strictEqual(
+      extractIssueNumber("New_Excalibur_001_(2006)_(Digital)_(AnPymGold-Empire)"),
+      "001"
+    );
+    assert.strictEqual(
+      extractIssueNumber("Batman_066_(2013)_(Digital)"),
+      "066"
+    );
+  });
+
   it("should not combine issue with year", () => {
     assert.strictEqual(
       extractIssueNumber("Dark.Wolverine.076.(2009)"),
@@ -93,6 +108,14 @@ describe("extractIssueNumber", () => {
     // Should NOT return "076.2009"
     const result = extractIssueNumber("Dark.Wolverine.076.(2009)");
     assert.ok(!result.includes("2009"));
+  });
+
+  it("should extract issue number preceded by #", () => {
+    assert.strictEqual(
+      extractIssueNumber("Strange Tales #1 (1987) (digital-HD) (Marika-Empire)"),
+      "1"
+    );
+    assert.strictEqual(extractIssueNumber("Batman #066 (2013) (Digital)"), "066");
   });
 
   it("should return null for filenames without issue numbers", () => {
@@ -104,6 +127,10 @@ describe("detectAnnual", () => {
   it("should detect annual in filename", () => {
     assert.strictEqual(detectAnnual("Batman Annual 01 (2020)"), true);
     assert.strictEqual(detectAnnual("Batman annual 01 (2020)"), true);
+  });
+
+  it("should detect annual in underscore-separated filenames", () => {
+    assert.strictEqual(detectAnnual("Batman_Annual_01_(2020)"), true);
   });
 
   it("should not detect non-annual files", () => {
@@ -320,6 +347,59 @@ describe("extractParenContent", () => {
       assert.strictEqual(result.scanType, "Digital");
       assert.strictEqual(result.releaseGroup, "AnPymGold.Empire");
     });
+
+    it("should handle underscore-separated filenames", () => {
+      const result = extractParenContent(
+        "New_Excalibur_001_(2006)_(Digital)_(AnPymGold-Empire)"
+      );
+      assert.strictEqual(result.year, "2006");
+      assert.strictEqual(result.scanType, "Digital");
+      assert.strictEqual(result.releaseGroup, "AnPymGold-Empire");
+    });
+  });
+});
+
+describe("detectFileFormat", () => {
+  function writeTempFile(bytes) {
+    const tmpPath = path.join(os.tmpdir(), `comics-test-${Date.now()}.bin`);
+    fs.writeFileSync(tmpPath, Buffer.from(bytes));
+    return tmpPath;
+  }
+
+  it("should detect ZIP magic bytes as 'zip'", () => {
+    const tmp = writeTempFile([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00]);
+    try {
+      assert.strictEqual(detectFileFormat(tmp), "zip");
+    } finally {
+      fs.unlinkSync(tmp);
+    }
+  });
+
+  it("should detect RAR v4 magic bytes as 'rar'", () => {
+    const tmp = writeTempFile([0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00, 0x00]);
+    try {
+      assert.strictEqual(detectFileFormat(tmp), "rar");
+    } finally {
+      fs.unlinkSync(tmp);
+    }
+  });
+
+  it("should detect RAR v5 magic bytes as 'rar'", () => {
+    const tmp = writeTempFile([0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00]);
+    try {
+      assert.strictEqual(detectFileFormat(tmp), "rar");
+    } finally {
+      fs.unlinkSync(tmp);
+    }
+  });
+
+  it("should return null for unrecognized format", () => {
+    const tmp = writeTempFile([0xff, 0xfe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+    try {
+      assert.strictEqual(detectFileFormat(tmp), null);
+    } finally {
+      fs.unlinkSync(tmp);
+    }
   });
 });
 

@@ -1,6 +1,8 @@
 // Library version of comics-renamer functions for unit testing
 // This exports all the core logic functions
 
+const fs = require("fs");
+
 function isIssueNumber(token) {
   if (!token) return false;
 
@@ -23,11 +25,12 @@ function isIssueNumber(token) {
 }
 
 function extractIssueNumber(filename) {
-  // Remove " of ##" pattern
-  let working = filename.replace(/ of [0-9]+/g, "");
+  // Remove " of ##" pattern (space or underscore separated)
+  let working = filename.replace(/[\s_]of[\s_][0-9]+/g, "");
 
-  // Split by spaces, periods, and parentheses to get tokens
-  const tokens = working.split(/[\s().]+/);
+  // Split by spaces, periods, underscores, parentheses, and # to get tokens
+  // # is included so "#1" is split into ["", "1"] and the number is found
+  const tokens = working.split(/[\s()._#]+/);
 
   // Find first token that looks like an issue number
   // Check for decimal issues FIRST (e.g., "500.1" split into ["500", "1"])
@@ -71,7 +74,8 @@ function extractIssueNumber(filename) {
 
 function detectAnnual(filename) {
   // Check if filename contains "Annual" (case insensitive)
-  return /\bannual\b/i.test(filename);
+  // Replace underscores with spaces so \b word boundaries work correctly
+  return /\bannual\b/i.test(filename.replace(/_/g, " "));
 }
 
 function padIssueNumber(issueNum, numDigits) {
@@ -170,10 +174,33 @@ function extractParenContent(filename, capitalize = true) {
   return result;
 }
 
+function detectFileFormat(filePath) {
+  const fd = fs.openSync(filePath, "r");
+  const buf = Buffer.alloc(8);
+  try {
+    fs.readSync(fd, buf, 0, 8, 0);
+  } finally {
+    fs.closeSync(fd);
+  }
+
+  // ZIP: PK signature
+  if (buf[0] === 0x50 && buf[1] === 0x4b) {
+    return "zip";
+  }
+
+  // RAR: "Rar!" signature (v4 and v5)
+  if (buf[0] === 0x52 && buf[1] === 0x61 && buf[2] === 0x72 && buf[3] === 0x21) {
+    return "rar";
+  }
+
+  return null;
+}
+
 module.exports = {
   isIssueNumber,
   extractIssueNumber,
   detectAnnual,
   padIssueNumber,
   extractParenContent,
+  detectFileFormat,
 };
