@@ -433,19 +433,67 @@ for (const file of files) {
     newName = processFile(file);
   }
 
+  // Extension fix logic
+  let extFixed = false;
+  if (fixExtensions) {
+    const currentExt = path.extname(file).toLowerCase();
+    if (currentExt === ".cbr" || currentExt === ".cbz") {
+      const detectedFormat = detectFileFormat(path.join(resolvedFolder, file));
+      if (detectedFormat === null) {
+        console.log(`Warning: Could not detect format for ${file} — extension not changed`);
+      } else {
+        const correctExt = detectedFormat === "zip" ? ".cbz" : ".cbr";
+        const base = newName || file;
+        const baseWithoutExt = base.slice(0, base.length - path.extname(base).length);
+        const candidate = baseWithoutExt + correctExt;
+        if (correctExt !== path.extname(base).toLowerCase()) {
+          if (candidate !== file && fs.existsSync(path.join(resolvedFolder, candidate))) {
+            console.log(`Warning: Cannot fix extension for ${file} — ${candidate} already exists`);
+          } else {
+            newName = candidate;
+            extFixed = true;
+          }
+        }
+      }
+    }
+  }
+
   if (!newName || newName === file) {
     continue; // Skip if no change needed
   }
 
-  changes.push({ oldName: file, newName });
+  changes.push({ oldName: file, newName, extFixed });
 }
 
 // Display all changes
+const YELLOW = "\x1b[93m";
+const RESET = "\x1b[0m";
+
 for (let i = 0; i < changes.length; i++) {
-  const { oldName, newName } = changes[i];
-  console.log(`[${i + 1}] Rename:`);
-  console.log(`  Old: ${oldName}`);
-  console.log(`  New: ${highlightDifferences(oldName, newName)}`);
+  const { oldName, newName, extFixed } = changes[i];
+  const oldExt = path.extname(oldName);
+  const newExt = path.extname(newName);
+  const nameChanged = oldName.slice(0, oldName.length - oldExt.length) !==
+                      newName.slice(0, newName.length - newExt.length);
+
+  if (extFixed && !nameChanged) {
+    // Extension-only fix: print directly with yellow extension
+    const basePart = newName.slice(0, newName.length - newExt.length);
+    console.log(`[${i + 1}] Ext fix:`);
+    console.log(`  Old: ${oldName}`);
+    console.log(`  New: ${basePart}${YELLOW}${newExt}${RESET}`);
+  } else if (extFixed && nameChanged) {
+    // Combined: green name changes, yellow extension
+    const extensionStart = newName.length - newExt.length;
+    console.log(`[${i + 1}] Rename + ext fix:`);
+    console.log(`  Old: ${oldName}`);
+    console.log(`  New: ${highlightDifferences(oldName, newName, extensionStart)}`);
+  } else {
+    // Normal rename only
+    console.log(`[${i + 1}] Rename:`);
+    console.log(`  Old: ${oldName}`);
+    console.log(`  New: ${highlightDifferences(oldName, newName)}`);
+  }
 }
 
 console.log("");
